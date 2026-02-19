@@ -15,11 +15,13 @@ The answer is Kubernetes. And here's the thing—your Week 1 apps? They've been 
 
 By the end of this class, you will be able to:
 
-1. Diagram the Kubernetes control plane and explain the role of each component (API server, etcd, scheduler, controller manager, kubelet)
-2. Explain the desired state → actual state reconciliation loop that makes Kubernetes self-healing
-3. Create and manage Pods, Deployments, and Services using `kubectl`
-4. Perform rolling updates and explain how Kubernetes rolls out changes without downtime
-5. Debug failing pods using `kubectl logs`, `kubectl describe`, `kubectl exec`, and cluster events
+1. Diagram the Kubernetes control plane and explain the role of each component (API server, etcd, scheduler, controller manager, kubelet) `CKA: Cluster Architecture, Installation and Configuration`
+2. Explain the desired state -> actual state reconciliation loop that makes Kubernetes self-healing `CKA: Workloads and Scheduling`
+3. Create and manage Pods, Deployments, and Services using `kubectl` `CKA: Workloads and Scheduling + Services and Networking`
+4. Perform rolling updates and explain how Kubernetes rolls out changes without downtime `CKA: Workloads and Scheduling`
+5. Debug failing pods using `kubectl logs`, `kubectl describe`, `kubectl exec`, and cluster events `CKA: Troubleshooting`
+6. Bootstrap a disposable control plane with `kubeadm` and identify key admin artifacts (`/etc/kubernetes/manifests`, kubeconfigs, certs) `CKA: Cluster Architecture, Installation and Configuration`
+7. Author and test least-privilege RBAC with Roles, ClusterRoles, and bindings using `kubectl auth can-i` `CKA: Cluster Architecture, Installation and Configuration`
 
 ---
 
@@ -99,7 +101,7 @@ This mirrors how real teams work. Developers don't `kubectl apply` to production
 | 1:10 - 1:25 | Break | — |
 | 1:25 - 1:45 | Pods, Deployments, Services: The Core Objects | Lecture |
 | 1:45 - 2:25 | **Lab 2:** Deploy, Scale, Update, Debug | Hands-on |
-| 2:25 - 2:50 | **Lab 3:** GitOps Submission — Ship to Production | Hands-on |
+| 2:25 - 2:50 | **Lab 3:** GitOps Submission — Ship Dev to Production | Hands-on |
 | 2:50 - 3:00 | Wrap-up & Homework Introduction | — |
 
 ---
@@ -256,16 +258,46 @@ You'll:
 - Perform a rolling update with zero downtime
 - Break things on purpose and debug with `kubectl describe`, `logs`, and `exec`
 
-### Lab 3: GitOps Submission — Ship to Production
+### Lab 3: GitOps Submission — Ship Dev to Production
 
 📁 See [labs/lab-03-gitops-submission/](./labs/lab-03-gitops-submission/)
 
 You'll:
 - Push your updated image to GHCR
-- Write Kubernetes manifests for the gitops repo
-- Submit a pull request to `container-gitops`
+- Write Kubernetes manifests for your dev namespace
+- Submit a pull request to `talos-gitops`
 - Watch ArgoCD deploy your app to the shared cluster
-- Verify your app is live with a public URL
+- Verify your dev environment is live
+
+### Lab 4 (CKA Extension): kubeadm Bootstrap Foundations
+
+📁 See [labs/lab-04-kubeadm-bootstrap/](./labs/lab-04-kubeadm-bootstrap/)
+
+You'll:
+- Run kubeadm preflight checks in a disposable admin VM
+- Initialize a single control-plane cluster and configure kubectl access
+- Inspect static pod manifests, kubeconfig files, and cert locations
+- Practice safe reset and re-bootstrap workflow
+
+### Lab 5 (CKA Extension): RBAC Authorization Deep Dive
+
+📁 See [labs/lab-05-rbac-authz/](./labs/lab-05-rbac-authz/)
+
+You'll:
+- Create namespace-scoped and cluster-scoped permissions
+- Bind identities with RoleBindings and ClusterRoleBindings
+- Diagnose authorization errors with impersonation and `kubectl auth can-i`
+- Verify least-privilege guardrails
+
+---
+
+## Generated Visualizations
+
+### Lab 2: Deploy, Scale, Update, Debug Timeline
+
+![Deployment Rollout Timeline](../assets/generated/week-04-deploy-rollout/deployment_rollout_timeline.png)
+
+![Deployment Pod Phase Timeline](../assets/generated/week-04-deploy-rollout/deployment_pod_phase_timeline.png)
 
 ---
 
@@ -287,14 +319,20 @@ Answer these in your own words after completing the labs:
 
 ## Homework
 
-Complete these exercises in the container-gym before next class:
+Complete these before next class:
 
 | Exercise | Time | Focus |
 |----------|------|-------|
-| `jerry-forgot-resources` | 20 min | Pod scheduling failures — Jerry deployed without resource requests |
-| `crashloopbackoff-detective` | 20 min | Debug a pod stuck in CrashLoopBackOff |
-| `selector-mismatch` | 15 min | Service selector doesn't match pod labels — no traffic flowing |
-| `rollout-rollback` | 15 min | Practice rolling updates and rollbacks |
+| **Add prod namespace** | 20 min | Add a `prod/` directory to your `talos-gitops` student directory, update the root kustomization, and submit a PR — same process as Lab 3, different namespace |
+
+Plus these exercises in the container-gym:
+
+| Exercise | Time | Focus |
+|----------|------|-------|
+| `jerry-forgot-resources` | 20 min | Pod scheduling failures from missing requests/limits |
+| `jerry-broken-service` | 20 min | Service-to-pod routing and selector debugging |
+| `jerry-probe-failures` | 20 min | Startup/readiness probe troubleshooting |
+| `jerry-rbac-denied` | 20 min | RBAC deny triage with `kubectl auth can-i` |
 
 ---
 

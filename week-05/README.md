@@ -15,11 +15,13 @@ This week your app gets a Redis backend, and you'll learn the Kubernetes-native 
 
 By the end of this class, you will be able to:
 
-1. Use Helm to install, configure, and manage third-party software on a Kubernetes cluster
-2. Inject application configuration using ConfigMaps (as environment variables and volume mounts)
-3. Manage sensitive data with Kubernetes Secrets and explain why base64 ≠ encryption
-4. Provision persistent storage using PersistentVolumeClaims so data survives pod restarts
-5. Implement a production-grade secret management solution (Vault, Sealed Secrets, or SOPS)
+1. Use Helm to install, configure, and manage third-party software on a Kubernetes cluster `CKA: Cluster Architecture, Installation and Configuration`
+2. Inject application configuration using ConfigMaps (as environment variables and volume mounts) `CKA: Workloads and Scheduling`
+3. Manage sensitive data with Kubernetes Secrets and explain why base64 != encryption `CKA: Workloads and Scheduling`
+4. Provision persistent storage using PersistentVolumeClaims so data survives pod restarts `CKA: Storage`
+5. Implement a production-grade secret management solution (Vault, Sealed Secrets, or SOPS) `CKA: Cluster Architecture, Installation and Configuration`
+6. Create and validate etcd snapshots, then rehearse restore runbooks safely `CKA: Cluster Architecture, Installation and Configuration + Troubleshooting`
+7. Compare StorageClass reclaim policy and access mode behavior with live workloads `CKA: Storage`
 
 ---
 
@@ -202,7 +204,7 @@ You'll learn all three and choose one for your production deployment.
 
 ### Lab 1: Install Redis & Vault with Helm
 
-📁 See [labs/lab-01-helm-and-redis/](./labs/lab-01-helm-and-redis/)
+📁 See [labs/lab-01-helm-redis-and-vault/](./labs/lab-01-helm-redis-and-vault/)
 
 You'll:
 - Add Helm repositories and search for charts
@@ -223,15 +225,34 @@ You'll:
 - Update your Deployment to consume ConfigMaps and Secrets
 - Kill pods and verify data survives
 
-### Lab 3: Choose Your Secret Manager
+### Lab 3: Ship Redis to Production
 
-📁 See [labs/lab-03-secret-management/](./labs/lab-03-secret-management/)
+📁 See [labs/lab-03-ship-redis-to-prod/](./labs/lab-03-ship-redis-to-prod/)
 
 You'll:
-- Learn all three approaches (Vault, Sealed Secrets, SOPS)
-- Choose one for your production deployment
-- Remove the plaintext Secret from your manifests
-- Update your gitops repo and submit a PR
+- Push your Redis-backed app and manifests through the GitOps repo
+- Validate overlays and environment wiring before PR submission
+- Verify ArgoCD deployment in the shared cluster
+
+### Lab 4 (CKA Extension): etcd Snapshot + Restore Drill
+
+📁 See [labs/lab-04-etcd-snapshot-restore/](./labs/lab-04-etcd-snapshot-restore/)
+
+You'll:
+- Capture etcd snapshots from the control plane with proper cert usage
+- Validate snapshot integrity before incident pressure
+- Rehearse a safe restore workflow in a non-destructive sandbox
+- Map the sequence to `jerry-etcd-snapshot-missing`
+
+### Lab 5 (CKA Extension): StorageClass Reclaim + Access Modes
+
+📁 See [labs/lab-05-storageclass-reclaim-accessmode/](./labs/lab-05-storageclass-reclaim-accessmode/)
+
+You'll:
+- Create dynamic PVCs against multiple StorageClasses
+- Observe `Delete` vs `Retain` reclaim behavior
+- Trigger and triage access-mode scheduling failures
+- Map outcomes to planned scenarios `jerry-pvc-pending-storageclass` and `jerry-reclaim-policy-surprise`
 
 ---
 
@@ -255,12 +276,14 @@ Answer these in your own words after completing the labs:
 
 Complete these exercises in the container-gym before next class:
 
+Use this mapped reinforcement set (all exercises below currently exist in `gymctl`):
+
 | Exercise | Time | Focus |
 |----------|------|-------|
-| `jerry-hardcoded-password` | 20 min | Jerry put the DB password in the Dockerfile |
-| `configmap-hot-reload` | 20 min | Update config without restarting pods |
-| `pvc-data-recovery` | 20 min | Data disappeared — the PVC binding is wrong |
-| `secret-rotation` | 25 min | Rotate a secret without downtime |
+| `jerry-missing-configmap` | 20 min | Debug ConfigMap dependencies and recover pod startup |
+| `jerry-probe-failures` | 20 min | Tune startup/readiness behavior for slower services |
+| `jerry-wrong-namespace` | 20 min | Fix cross-namespace service discovery using FQDNs |
+| `jerry-etcd-snapshot-missing` | 25 min | etcd backup workflow and recovery validation |
 
 ---
 
@@ -273,6 +296,8 @@ Complete these exercises in the container-gym before next class:
 ### Reference
 - [Helm Documentation](https://helm.sh/docs/)
 - [PersistentVolumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+- [StorageClasses](https://kubernetes.io/docs/concepts/storage/storage-classes/)
+- [local-path-provisioner](https://github.com/rancher/local-path-provisioner) — the provisioner used in kind/k3s
 - [Vault on Kubernetes](https://developer.hashicorp.com/vault/docs/platform/k8s)
 - [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets)
 - [SOPS](https://github.com/getsops/sops)
