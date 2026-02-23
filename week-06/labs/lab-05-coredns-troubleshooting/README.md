@@ -10,6 +10,12 @@
 
 ---
 
+## The Story
+
+This is the outage that makes healthy apps look broken: pods are running, deployments are green, but every service call starts failing because names no longer resolve. In real incidents, teams often chase the wrong layer first (app code, Redis, network policy) and lose valuable time. In this lab, you will intentionally break cluster DNS, read the evidence trail, and restore service discovery with the same workflow expected on the CKA.
+
+---
+
 ## CKA Objectives Mapped
 
 - Troubleshoot cluster component failures
@@ -133,6 +139,8 @@ Starter assets for this lab are in [`starter/`](./starter/):
 
 Create a probe pod and confirm DNS works before fault injection:
 
+You are establishing a control state first. If you do not prove DNS is healthy now, you cannot confidently attribute later failures to your injected CoreDNS change.
+
 ```bash
 kubectl apply -f week-06/labs/lab-05-coredns-troubleshooting/starter/dns-probe-pod.yaml
 kubectl wait --for=condition=Ready pod/dns-probe --timeout=60s
@@ -140,11 +148,17 @@ kubectl exec dns-probe -- nslookup kubernetes.default.svc.cluster.local
 kubectl exec dns-probe -- nslookup svc-demo-clusterip.default.svc.cluster.local || true
 ```
 
+Notice: `kubernetes.default.svc.cluster.local` is the canonical baseline check because it should exist in every cluster. The second lookup may fail if that Service is absent, but the key signal is that DNS resolution itself works before injection.
+
+Operator mindset: prove a known-good baseline before introducing failure.
+
 ---
 
 ## Part 2: Inject Failure
 
 Run the injection script:
+
+This is a controlled blast radius exercise. You are creating a predictable DNS fault so you can practice diagnosis under pressure without guessing.
 
 ```bash
 bash week-06/labs/lab-05-coredns-troubleshooting/starter/inject-coredns-failure.sh
@@ -156,11 +170,17 @@ This script:
 - Rewrites upstream forwarding to an invalid target
 - Restarts CoreDNS deployment
 
+Notice: this is not random breakage. The backup file gives you a clean rollback path, and the invalid `forward` target creates a failure class you should recognize quickly in logs and lookup symptoms.
+
+Operator mindset: break systems deliberately only when you also control recovery.
+
 ---
 
 ## Part 3: Triage Like an Incident
 
 Use this sequence:
+
+Run these in order to narrow scope fast: client symptom first, then component health, then logs/config evidence, then event timeline.
 
 ```bash
 kubectl exec dns-probe -- nslookup kubernetes.default.svc.cluster.local || true
@@ -170,6 +190,8 @@ kubectl -n kube-system get configmap coredns -o yaml
 kubectl get events -A --sort-by=.metadata.creationTimestamp | tail -40
 ```
 
+Notice: you are building a chain of proof, not collecting random output. If lookups fail from the probe while CoreDNS logs and Corefile show bad forwarding, you have root-cause evidence that DNS config (not app code) is the fault domain.
+
 Capture in your notes:
 
 1. Symptom
@@ -177,24 +199,36 @@ Capture in your notes:
 3. Fix command
 4. Verification command
 
+Operator mindset: always leave an evidence trail another operator could replay.
+
 ---
 
 ## Part 4: Restore CoreDNS
+
+Now execute a targeted restore and wait for control-plane convergence. Fast fixes still require explicit readiness confirmation.
 
 ```bash
 bash week-06/labs/lab-05-coredns-troubleshooting/starter/restore-coredns.sh
 kubectl -n kube-system rollout status deployment/coredns --timeout=120s
 ```
 
+Notice: restoration is not complete until rollout status reports success. A rollback command without a healthy rollout is just a change request, not recovery.
+
 Re-run DNS checks:
+
+This is your "incident closed" proof: user-path symptom is gone from inside a workload pod.
 
 ```bash
 kubectl exec dns-probe -- nslookup kubernetes.default.svc.cluster.local
 ```
 
+Operator mindset: declare recovery only after symptom-level verification.
+
 ---
 
 ## Part 5: Verification Checklist
+
+This checklist turns troubleshooting into objective criteria. If you cannot point to these outcomes, you are not done yet.
 
 You are done when:
 
@@ -202,6 +236,10 @@ You are done when:
 - You identify CoreDNS configuration as root cause
 - DNS lookups succeed after restore
 - Your notes include command-level evidence, not guesses
+
+Notice: this mirrors CKA scoring behavior and real incident review standards: observable symptom, evidenced cause, tested fix, confirmed recovery.
+
+Operator mindset: optimize for reproducible diagnosis, not heroic intuition.
 
 ---
 
